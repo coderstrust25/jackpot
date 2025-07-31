@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vegas Spin - Win The Jackpot!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&family=Russo+One&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: #090a0f; /* Darker base for the gradient */
+            font-family: 'Roboto Condensed', sans-serif;
+            overflow: hidden; /* Prevent scrollbars from the stars */
+        }
+        .background-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+            z-index: -1;
+        }
+        /* Animated Stars Background */
+        .stars {
+            background: #000 url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/1231630/stars.png) repeat;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: block;
+            z-index: 0;
+        }
+        .twinkling {
+            width: 10000px;
+            height: 100%;
+            background: transparent url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/1231630/twinkling.png) repeat;
+            background-size: 1000px 1000px;
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 1;
+            animation: move-twink-back 200s linear infinite;
+        }
+        @keyframes move-twink-back {
+            from {background-position:0 0;}
+            to {background-position:-10000px 5000px;}
+        }
+
+        .font-russo {
+            font-family: 'Russo One', sans-serif;
+        }
+        .wheel-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.5));
+        }
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-image: conic-gradient(
+                #ffc700 0deg 45deg, 
+                #f44336 45deg 90deg,
+                #9c27b0 90deg 135deg,
+                #2196f3 135deg 180deg,
+                #4caf50 180deg 225deg,
+                #ff9800 225deg 270deg,
+                #e91e63 270deg 315deg,
+                #673ab7 315deg 360deg
+            );
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.2), inset 0 0 20px rgba(0,0,0,0.5);
+            border: 5px solid #fff;
+            position: relative;
+            transition: transform 5s cubic-bezier(0.3, 1, 0.7, 1); /* Animation for the spin */
+        }
+        /* Text on the wheel */
+        .wheel-text {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+        }
+        .wheel-text span {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            display: block;
+            transform-origin: 0% 0%;
+            transform: translateY(-50%); /* Base transform */
+        }
+        .wheel-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: #fff;
+            border-radius: 50%;
+            border: 5px solid #333;
+            z-index: 2;
+        }
+        .pointer {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-bottom: 40px solid #fff;
+            z-index: 3;
+            filter: drop-shadow(0 -5px 5px rgba(0,0,0,0.3));
+        }
+        .btn-spin {
+            background: linear-gradient(180deg, #ffdd40 0%, #ffb800 100%);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+            box-shadow: 0 5px 0 #c88f00, 0 8px 15px rgba(0,0,0,0.5);
+            transition: all 0.1s ease-in-out;
+            animation: pulse-button 2s infinite;
+            cursor: pointer;
+        }
+        .btn-spin:active {
+            transform: translateY(5px);
+            box-shadow: 0 0px 0 #c88f00;
+        }
+        .btn-spin.disabled {
+            filter: grayscale(80%);
+            animation: none;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .jackpot-glow {
+            animation: jackpot-glow 2s infinite alternate;
+        }
+        @keyframes jackpot-glow {
+            from { text-shadow: 0 0 10px #fff, 0 0 20px #ffc700, 0 0 30px #ffc700; }
+            to { text-shadow: 0 0 20px #fff, 0 0 30px #ffc700, 0 0 40px #ffc700; }
+        }
+        @keyframes pulse-button {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        /* Notification Popups */
+        .popup {
+            position: fixed;
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0,0,0,0.85);
+            border: 1px solid #ffc700;
+            border-radius: 10px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            transition: all 0.5s ease-in-out;
+            z-index: 99;
+            opacity: 0;
+        }
+        .popup.show {
+            bottom: 20px;
+            opacity: 1;
+        }
+        /* NEW: Withdraw popup style */
+        .withdraw-popup {
+            left: auto;
+            right: 20px;
+            transform: translateX(0);
+        }
+    </style>
+
+    <!-- 
+    =====================================================================
+    == PASTE YOUR ADSTERRA POP-UNDER CODE HERE ==
+    Adsterra will give you a script. Paste it right below this comment.
+    =====================================================================
+    -->
+
+</head>
+<body class="text-white">
+
+    <!-- Animated Background -->
+    <div class="background-container">
+        <div class="stars"></div>
+        <div class="twinkling"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="min-h-screen flex flex-col items-center justify-between p-4 relative z-10">
+        
+        <header class="w-full max-w-4xl mx-auto flex justify-end items-center p-4">
+            <div class="bg-black/30 backdrop-blur-sm p-2 rounded-lg flex items-center space-x-3 border border-gray-700">
+                <svg class="w-8 h-8 text-yellow-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" /><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd" /></svg>
+                <span id="wallet-balance" class="text-xl font-bold text-white">$0.00</span>
+                <a href="https://www.profitableratecpm.com/mfawmxnd?key=c3e81e0d37465ac0e8cc30e9055247bb" class="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded-md text-sm transition">Withdraw</a>
+            </div>
+        </header>
+
+        <main class="flex flex-col items-center">
+            <div class="text-center mb-4">
+                <h2 class="text-2xl font-russo uppercase tracking-wider text-gray-400">Current Jackpot</h2>
+                <p id="jackpot-amount" class="text-6xl font-russo text-yellow-300 jackpot-glow">$1,284,591.72</p>
+            </div>
+            
+            <div class="wheel-container mb-8">
+                <div class="pointer"></div>
+                <div class="wheel" id="wheel">
+                    <div id="wheel-text-container" class="wheel-text"></div>
+                </div>
+                <div class="wheel-center"></div>
+            </div>
+
+            <!-- MODIFIED: Button now triggers a function -->
+            <div id="spin-btn" class="w-full max-w-xs btn-spin text-gray-900 font-russo text-3xl py-4 px-6 rounded-xl text-center flex items-center justify-center">
+                <svg class="w-8 h-8 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                SPIN NOW!
+            </div>
+        </main>
+
+        <footer class="text-center">
+            <p class="text-lg mb-2">You have <span id="spin-count" class="font-bold text-yellow-300">3</span> FREE SPINS remaining!</p>
+            <a href="https://www.profitableratecpm.com/mfawmxnd?key=c3e81e0d37465ac0e8cc30e9055247bb" class="text-gray-400 hover:text-white underline transition">
+                Claim Daily Bonus
+            </a>
+        </footer>
+    </div>
+
+    <!-- Popups -->
+    <div id="winner-popup" class="popup">
+        <svg class="w-8 h-8 text-yellow-300 mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-1.707 1.707A1 1 0 003 15v1a1 1 0 001 1h12a1 1 0 001-1v-1a1 1 0 00-.293-.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"></path></svg>
+        <div>
+            <p id="winner-text" class="font-bold text-white"></p>
+            <p class="text-sm text-gray-400">a few seconds ago</p>
+        </div>
+    </div>
+    
+    <div id="welcome-bonus-popup" class="popup border-green-400">
+        <svg class="w-8 h-8 text-green-400 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0114.83 6H16a2 2 0 110 4h-5V9a1 1 0 10-2 0v1H4a2 2 0 110-4h1.17C5.06 5.687 5 5.35 5 5zm4 1V5a1 1 0 10-2 0v1h2zm3 0V5a1 1 0 10-2 0v1h2zM6 11a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1z" clip-rule="evenodd" /></svg>
+        <p class="font-bold text-white">Welcome! You received a $5.00 bonus!</p>
+    </div>
+    
+    <!-- NEW: Withdraw notification popup -->
+    <div id="withdraw-popup" class="popup withdraw-popup border-blue-400">
+        <p class="font-bold text-white">Balance updated! Click Withdraw! 👉</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const wheel = document.getElementById('wheel');
+            const spinBtn = document.getElementById('spin-btn');
+            const wheelTextContainer = document.getElementById('wheel-text-container');
+            const walletBalanceEl = document.getElementById('wallet-balance');
+            const welcomePopupEl = document.getElementById('welcome-bonus-popup');
+            const withdrawPopupEl = document.getElementById('withdraw-popup');
+            const spinCountEl = document.getElementById('spin-count');
+
+            const prizes = ["JACKPOT", "$100", "TRY AGAIN", "$500", "FREE SPIN", "$250", "BONUS", "$1000"];
+            const segmentAngle = 360 / prizes.length;
+            let currentRotation = 0;
+            let isSpinning = false;
+            let walletBalance = 0.00;
+            let spinsLeft = 3;
+
+            // --- INITIAL SETUP ---
+            function setupWheel() {
+                prizes.forEach((prize, index) => {
+                    const angle = (segmentAngle * index) + (segmentAngle / 2);
+                    const radius = 110;
+                    const span = document.createElement('span');
+                    span.textContent = prize;
+                    span.style.transform = `rotate(${angle}deg) translate(${radius}px) rotate(-90deg)`;
+                    wheelTextContainer.appendChild(span);
+                });
+            }
+
+            function showWelcomeBonus() {
+                welcomePopupEl.classList.add('show');
+                walletBalance = 5.00;
+                walletBalanceEl.innerText = `$${walletBalance.toFixed(2)}`;
+                setTimeout(() => welcomePopupEl.classList.remove('show'), 4000);
+            }
+            
+            setupWheel();
+            setTimeout(showWelcomeBonus, 2000);
+
+            // --- SPIN FUNCTIONALITY ---
+            spinBtn.addEventListener('click', () => {
+                if (isSpinning || spinsLeft <= 0) return;
+
+                // Open the ad link first!
+                window.open('https://www.profitableratecpm.com/a62kp0vd?key=0822c5dcb6dcd022a27bd54b95ff5b95', '_blank');
+
+                isSpinning = true;
+                spinBtn.classList.add('disabled');
+                spinsLeft--;
+                spinCountEl.textContent = spinsLeft;
+
+                const spinCycles = 5; // How many full rotations
+                const randomPrizeIndex = Math.floor(Math.random() * prizes.length);
+                const prize = prizes[randomPrizeIndex];
+                
+                // Calculate the final rotation angle
+                const prizeAngle = (randomPrizeIndex * segmentAngle) + (segmentAngle / 2);
+                const targetRotation = (360 * spinCycles) + (360 - prizeAngle);
+                
+                currentRotation += targetRotation;
+                wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+                // After the spin animation finishes (5 seconds)
+                setTimeout(() => {
+                    handlePrize(prize);
+                    isSpinning = false;
+                    if (spinsLeft > 0) {
+                        spinBtn.classList.remove('disabled');
+                    }
+                }, 5000);
+            });
+
+            function handlePrize(prize) {
+                if (prize.startsWith('$')) {
+                    const amountWon = parseFloat(prize.replace('$', ''));
+                    walletBalance += amountWon;
+                    walletBalanceEl.innerText = `$${walletBalance.toFixed(2)}`;
+                    showWithdrawPopup();
+                } else if (prize === 'FREE SPIN') {
+                    spinsLeft++;
+                    spinCountEl.textContent = spinsLeft;
+                }
+                // Handle other prizes like JACKPOT or BONUS if needed
+            }
+
+            function showWithdrawPopup() {
+                withdrawPopupEl.classList.add('show');
+                setTimeout(() => withdrawPopupEl.classList.remove('show'), 4000);
+            }
+
+            // --- JACKPOT AND WINNER NOTIFICATION LOGIC (Existing) ---
+            const jackpotEl = document.getElementById('jackpot-amount');
+            let currentJackpot = 1284591.72;
+            setInterval(() => {
+                currentJackpot += (Math.random() * 2.5);
+                jackpotEl.innerText = '$' + currentJackpot.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }, 1500);
+
+            const winnerPopup = document.getElementById('winner-popup');
+            const winnerText = document.getElementById('winner-text');
+            const winners = [
+                { name: 'John D.', prize: '$500' }, { name: 'Maria S.', prize: 'a FREE SPIN' },
+                { name: 'Kevin F.', prize: '$250' }, { name: 'Linda P.', prize: 'a BONUS' },
+                { name: 'Mike T.', prize: '$1000' }
+            ];
+            let winnerIndex = 0;
+
+            function showWinner() {
+                const winner = winners[winnerIndex % winners.length];
+                winnerText.textContent = `${winner.name} just won ${winner.prize}!`;
+                winnerPopup.classList.add('show');
+                setTimeout(() => { winnerPopup.classList.remove('show'); winnerIndex++; }, 5000);
+            }
+            setTimeout(() => { showWinner(); setInterval(showWinner, 9000); }, 7000);
+        });
+        
+        // =====================================================================
+        // == HOW TO USE THIS FILE ==
+        // 1. Get your Pop-Under code from Adsterra and paste it in the <head>
+        //    section where indicated.
+        // 2. Get your Direct Link URL from Adsterra.
+        // 3. Replace ALL THREE instances of "YOUR_ADSTERRA_DIRECT_LINK_HERE" 
+        //    in this file with your actual Direct Link URL.
+        // =====================================================================
+    </script>
+
+</body>
+</html>
